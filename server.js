@@ -1,39 +1,27 @@
-import express from 'express';
-import fetch from 'node-fetch';
-import cors from 'cors';
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios").default;
 
 const app = express();
-
-// Разрешаем CORS
 app.use(cors());
-app.use(express.json());
 
-app.get('/image', async (req, res) => {
+app.get("/img", async (req, res) => {
   const url = req.query.url;
-  if (!url) return res.status(400).send("No URL provided");
+  if (!url) return res.status(400).send("no url");
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      return res.status(500).send("Failed to fetch image");
-    }
+    const response = await axios.get(url, {
+      responseType: "arraybuffer"
+    });
 
-    const buffer = await response.arrayBuffer();
+    res.set("Content-Type", "image/jpeg");
+    res.send(response.data);
 
-    res.setHeader("Content-Type", response.headers.get("content-type") || "image/jpeg");
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-
-    return res.send(Buffer.from(buffer));
   } catch (err) {
-    console.error(err);
-    return res.status(500).send("Proxy error");
+    res.status(500).send("download error");
   }
 });
 
-const PORT = process.env.PORT || 10000;
-
-app.listen(PORT, () => {
-  console.log(`Proxy running on port ${PORT}`);
-});
-
-
+// Render fix
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("proxy running on " + PORT));
