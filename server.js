@@ -77,6 +77,38 @@ app.get("/img", async (req, res) => {
   }
 });
 
+// --- GENERIC PROXY ---
+app.get("/proxy", async (req, res) => {
+  const url = req.query.url;
+
+  if (!url) {
+    return res.status(400).json({ error: "url param is missing" });
+  }
+
+  requestCount++;
+
+  try {
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+      timeout: 30000,
+      maxRedirects: 5,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+      }
+    });
+
+    const contentType = response.headers["content-type"] || "application/octet-stream";
+    res.set("Content-Type", contentType);
+    res.send(response.data);
+  } catch (err) {
+    console.error("Proxy error:", err.message);
+    res.status(500).json({
+      error: "failed to fetch url",
+      details: err.message
+    });
+  }
+});
+
 // --- START SERVER ---
 // Render выдает порт через process.env.PORT, иначе используем 3000
 const PORT = process.env.PORT || 3000;
